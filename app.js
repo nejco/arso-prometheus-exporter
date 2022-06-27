@@ -8,7 +8,7 @@ const url = 'https://meteo.arso.gov.si/uploads/probase/www/observ/surface/text/s
 const register = new client.Registry();
 
 //create a server object:
-http.createServer(function (req, res) {
+http.createServer(async function (req, res) {
     res.write(register.metrics()); //write a response to the client
     res.end(); //end the response
 }).listen(8080); //the server object listens on port 8080
@@ -45,12 +45,20 @@ register.registerMetric(rainGauge)
 register.registerMetric(humidityGauge)
 
 function updateData() {
+    let data = ""
     https.get(url, res => {
         res.setEncoding('utf8');
+        console.log("got response code", res.statusCode)
 
-        res.on('data', data => {
-            // console.log(data)
+        res.on('data', chunk => {
+            data += chunk
+        })
+
+        res.on("close", () => {
+            console.log("Retrieved all data");
+            // console.log("data: ", data)
             parseString(data, function (err, result) {
+                // console.log("result.data: ", result.data)
 
                 const latestData = result.data.metData[0];
 
@@ -69,11 +77,11 @@ function updateData() {
 
                 // JSON.stringify(result.data.metData[0], null, 2)
 
-                console.log(register.metrics())
+                // console.log(register.metrics())
+                console.log("returned metrics with success")
+
             });
-
-
-        })
+        });
 
     })
 }
